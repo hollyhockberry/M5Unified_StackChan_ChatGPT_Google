@@ -80,7 +80,6 @@ const Expression expressions_table[] = {
 ESP32WebServer server(80);
 
 String OPENAI_API_KEY = "";
-extern String GOOGLE_API_KEY;
 
 char* text1 = "みなさんこんにちは、私の名前はスタックチャンです、よろしくね。";
 char* text2 = "Hello everyone, my name is Stack Chan, nice to meet you.";
@@ -107,8 +106,6 @@ static const char APIKEY_HTML[] PROGMEM = R"KEWL(
     <form>
       <label for="role1">OpenAI API Key</label>
       <input type="text" id="openai" name="openai" oninput="adjustSize(this)"><br>
-      <label for="role2">Google API Key</label>
-      <input type="text" id="google" name="google" oninput="adjustSize(this)"><br>
       <button type="button" onclick="sendData()">Submit</button>
     </form>
     <script>
@@ -122,9 +119,6 @@ static const char APIKEY_HTML[] PROGMEM = R"KEWL(
         // 各ロールの値をFormDataオブジェクトに追加
         const openaiValue = document.getElementById("openai").value;
         if (openaiValue !== "") formData.append("openai", openaiValue);
-
-        const googleValue = document.getElementById("google").value;
-        if (googleValue !== "") formData.append("google", googleValue);
 
 	    // POSTリクエストを送信
 	    const xhr = new XMLHttpRequest();
@@ -428,14 +422,10 @@ void handle_apikey_set() {
   }
   // openai
   String openai = server.arg("openai");
-  // voicetxt
-   String google = server.arg("google");
  
   OPENAI_API_KEY = openai;
   // tts_user = voicetext;
-  GOOGLE_API_KEY = google;
   Serial.println(openai);
-   Serial.println(google);
 
   uint32_t nvs_handle;
   if (ESP_OK == nvs_open("apikey", NVS_READWRITE, &nvs_handle)) {
@@ -877,7 +867,6 @@ void setup()
 #ifndef USE_SDCARD
   WiFi.begin(WIFI_SSID, WIFI_PASS);
   OPENAI_API_KEY = String(OPENAI_APIKEY);
-  GOOGLE_API_KEY = String(GOOGL_APIKEY);
 #else
   /// settings
   if (SD.begin(GPIO_NUM_4, SPI, 25000000)) {
@@ -920,7 +909,6 @@ void setup()
             y = x;
         }
         nvs_set_str(nvs_handle, "openai", buf);
-        nvs_set_str(nvs_handle, "google", &buf[y]);
         Serial.println(buf);
         Serial.println(&buf[y]);
       }
@@ -938,16 +926,12 @@ void setup()
       Serial.println("nvs_open");
 
       size_t length1;
-       size_t length2;
-       if(ESP_OK == nvs_get_str(nvs_handle, "openai", nullptr, &length1) && ESP_OK == nvs_get_str(nvs_handle, "google", nullptr, &length2) && length1 && length2) {
+       if(ESP_OK == nvs_get_str(nvs_handle, "openai", nullptr, &length1) && length1) {
         Serial.println("nvs_get_str");
         char openai_apikey[length1 + 1];
-        char google_apikey[length2 + 1];
-        if(ESP_OK == nvs_get_str(nvs_handle, "openai", openai_apikey, &length1) && ESP_OK == nvs_get_str(nvs_handle, "google", google_apikey, &length2)) {
+        if(ESP_OK == nvs_get_str(nvs_handle, "openai", openai_apikey, &length1)) {
           OPENAI_API_KEY = String(openai_apikey);
-          GOOGLE_API_KEY = String(google_apikey);
           Serial.println(OPENAI_API_KEY);
-          Serial.println(GOOGLE_API_KEY);
         }
       }
       nvs_close(nvs_handle);
@@ -1000,6 +984,7 @@ void setup()
     Serial.println("MDNS responder started");
     M5.Lcd.println("MDNS responder started");
   }
+
   delay(1000);
   server.on("/", handleRoot);
 
@@ -1257,7 +1242,7 @@ void loop()
         }else{
           avatar.setSpeechText("I understand.");
         }
-        CloudSpeechClient* cloudSpeechClient = new CloudSpeechClient(USE_APIKEY);
+        CloudSpeechClient* cloudSpeechClient = new CloudSpeechClient();
         String ret = cloudSpeechClient->Transcribe(audio);
         delete cloudSpeechClient;
         delete audio;
