@@ -1242,7 +1242,7 @@ void loop()
         }else{
           avatar.setSpeechText("I understand.");
         }
-        CloudSpeechClient* cloudSpeechClient = new CloudSpeechClient();
+        CloudSpeechClient* cloudSpeechClient = new CloudSpeechClient(root_ca_openai, OPENAI_API_KEY.c_str());
         String ret = cloudSpeechClient->Transcribe(audio);
         delete cloudSpeechClient;
         delete audio;
