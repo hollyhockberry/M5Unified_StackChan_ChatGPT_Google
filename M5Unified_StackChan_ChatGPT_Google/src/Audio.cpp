@@ -1,21 +1,33 @@
 #include <M5Unified.h>
 #include "Audio.h"
 
+constexpr size_t record_number = 300;
+constexpr size_t record_length = 150;
+constexpr size_t record_size = record_number * record_length;
+constexpr size_t record_samplerate = 16000;
+constexpr int headerSize = 44;
+
 Audio::Audio() {
-  wavData = (typeof(wavData))heap_caps_malloc(record_size * sizeof(int16_t), MALLOC_CAP_8BIT);
-  memset(wavData, 0 , record_size * sizeof(int16_t));
+  const auto size = record_size * sizeof(int16_t) + headerSize;
+  record_buffer = static_cast<byte*>(::heap_caps_malloc(size, MALLOC_CAP_8BIT));
+  ::memset(record_buffer, 0, size);
 }
 
 Audio::~Audio() {
-  delete wavData;
+  delete record_buffer;
 }
 
-void Audio::CreateWavHeader(byte* header, int waveDataSize){
+size_t Audio::GetSize() const {
+  return record_size * sizeof(int16_t) + headerSize;
+}
+
+int16_t* MakeHeader(byte* header) {
+  const auto wavDataSize = record_number * record_length * 2;
   header[0] = 'R';
   header[1] = 'I';
   header[2] = 'F';
   header[3] = 'F';
-  unsigned int fileSizeMinus8 = waveDataSize + 44 - 8;
+  unsigned int fileSizeMinus8 = wavDataSize + headerSize - 8;
   header[4] = (byte)(fileSizeMinus8 & 0xFF);
   header[5] = (byte)((fileSizeMinus8 >> 8) & 0xFF);
   header[6] = (byte)((fileSizeMinus8 >> 16) & 0xFF);
@@ -52,17 +64,17 @@ void Audio::CreateWavHeader(byte* header, int waveDataSize){
   header[37] = 'a';
   header[38] = 't';
   header[39] = 'a';
-  header[40] = (byte)(waveDataSize & 0xFF);
-  header[41] = (byte)((waveDataSize >> 8) & 0xFF);
-  header[42] = (byte)((waveDataSize >> 16) & 0xFF);
-  header[43] = (byte)((waveDataSize >> 24) & 0xFF);
+  header[40] = (byte)(wavDataSize & 0xFF);
+  header[41] = (byte)((wavDataSize >> 8) & 0xFF);
+  header[42] = (byte)((wavDataSize >> 16) & 0xFF);
+  header[43] = (byte)((wavDataSize >> 24) & 0xFF);
+  return (int16_t*)&header[headerSize];
 }
 
 void Audio::Record() {
-  CreateWavHeader(paddedHeader, wavDataSize);
   M5.Mic.begin();
-  int rec_record_idx;
-  for (rec_record_idx = 0; rec_record_idx < record_number; rec_record_idx++) {
+  auto *wavData = MakeHeader(record_buffer);
+  for (int rec_record_idx = 0; rec_record_idx < record_number; ++rec_record_idx) {
     auto data = &wavData[rec_record_idx * record_length];
     M5.Mic.record(data, record_length, record_samplerate);
   }
