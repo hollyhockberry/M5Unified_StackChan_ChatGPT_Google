@@ -26,6 +26,7 @@
 #include <ESPmDNS.h>
 #include <deque>
 #include "CloudSpeechClient.h"
+#include "WhisperClient.h"
 
 // Default LANG_CODE
 String LANG_CODE = "ja-JP";
@@ -1054,9 +1055,6 @@ void setup()
   M5.Lcd.print("/ to control the chatGpt Server.\n");
   delay(3000);
 
-  Serial.println(OPENAI_API_KEY);
-  Serial.println(GOOGLE_API_KEY);
-
   audioLogger = &Serial;
   mp3 = new AudioGeneratorMP3();
 //  mp3->RegisterStatusCB(StatusCallback, (void*)"mp3");
@@ -1172,7 +1170,13 @@ int search_separator(String text, int tbl){
 // }
 
 ISpeechToTextClient* CreateSpeechToTextClient() {
-  return new CloudSpeechClient();
+  if (GOOGLE_API_KEY.equals("")) {
+    Serial.println("Use WhisperAPI");
+    return new WhisperClient();
+  } else {
+    Serial.println("Use Google Speech-To-Text");
+    return new CloudSpeechClient();
+  }
 }
 
 void loop()
