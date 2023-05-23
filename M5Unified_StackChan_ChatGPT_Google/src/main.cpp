@@ -440,6 +440,7 @@ void handle_apikey_set() {
   uint32_t nvs_handle;
   if (ESP_OK == nvs_open("apikey", NVS_READWRITE, &nvs_handle)) {
     nvs_set_str(nvs_handle, "openai", openai.c_str());
+    nvs_set_str(nvs_handle, "google", google.c_str());
     nvs_close(nvs_handle);
   }
   server.send(200, "text/plain", String("OK"));
@@ -943,10 +944,12 @@ void setup()
         Serial.println("nvs_get_str");
         char openai_apikey[length1 + 1];
         char google_apikey[length2 + 1];
-        if(ESP_OK == nvs_get_str(nvs_handle, "openai", openai_apikey, &length1) && ESP_OK == nvs_get_str(nvs_handle, "google", google_apikey, &length2)) {
+        if(ESP_OK == nvs_get_str(nvs_handle, "openai", openai_apikey, &length1)) {
           OPENAI_API_KEY = String(openai_apikey);
-          GOOGLE_API_KEY = String(google_apikey);
           Serial.println(OPENAI_API_KEY);
+        }
+        if(ESP_OK == nvs_get_str(nvs_handle, "google", google_apikey, &length2)) {
+          GOOGLE_API_KEY = String(google_apikey);
           Serial.println(GOOGLE_API_KEY);
         }
       }
@@ -970,7 +973,7 @@ void setup()
         char google_lang[length1 + 1];
         if(ESP_OK == nvs_get_str(nvs_handle, "lang", google_lang, &length1)) {
           LANG_CODE = String(google_lang);
-          Serial.println(OPENAI_API_KEY);
+          Serial.println(LANG_CODE);
         }
       }
       nvs_close(nvs_handle);
@@ -1050,6 +1053,9 @@ void setup()
   Serial.printf_P(PSTR("/ to control the chatGpt Server.\n"));
   M5.Lcd.print("/ to control the chatGpt Server.\n");
   delay(3000);
+
+  Serial.println(OPENAI_API_KEY);
+  Serial.println(GOOGLE_API_KEY);
 
   audioLogger = &Serial;
   mp3 = new AudioGeneratorMP3();
