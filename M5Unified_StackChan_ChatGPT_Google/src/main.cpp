@@ -1253,20 +1253,9 @@ void loop()
           avatar.setSpeechText("May I help you?");
         }
         M5.Speaker.end();
-        Serial.println("\r\nRecord start!\r\n");
-        Audio* audio = new Audio();
-        audio->Record();
-        Serial.println("Record end\r\n");
-        Serial.println("音声認識開始");
-        if(LANG_CODE == "ja-JP") {
-          avatar.setSpeechText("わかりました");
-        }else{
-          avatar.setSpeechText("I understand.");
-        }
-        CloudSpeechClient* cloudSpeechClient = new CloudSpeechClient(USE_APIKEY);
-        String ret = cloudSpeechClient->Transcribe(audio);
+        CloudSpeechClient* cloudSpeechClient = new CloudSpeechClient();
+        String ret = cloudSpeechClient->Transcribe(avatar);
         delete cloudSpeechClient;
-        delete audio;
         delay(500);
 #ifdef USE_SERVO
         servo_home = prev_servo_home;

@@ -2,19 +2,17 @@
 #include "network_param.h"
 #include <base64.h>
 #include <ArduinoJson.h>
+#include <WiFiClientSecure.h>
+#include "Audio.h"
 
-CloudSpeechClient::CloudSpeechClient(Authentication authentication) {
-  this->authentication = authentication;
-  client.setCACert(root_ca);
-  client.setTimeout( 10000 ); 
-  if (!client.connect(server_stt, 443)) Serial.println("Connection failed!");
+CloudSpeechClient::CloudSpeechClient() {
 }
 
 CloudSpeechClient::~CloudSpeechClient() {
-  client.stop();
 }
 
-void CloudSpeechClient::PrintHttpBody2(Audio* audio) {
+namespace {
+void PrintHttpBody2(WiFiClientSecure& client, Audio* audio) {
   String enc = base64::encode(audio->paddedHeader, sizeof(audio->paddedHeader));
   enc.replace("\n", "");  // delete last "\n"
   client.print(enc);      // HttpBody2
@@ -27,23 +25,36 @@ void CloudSpeechClient::PrintHttpBody2(Audio* audio) {
   } 
 //  Serial.printf("PrintHttpBody2=%d",len);
 }
+}  // namespace 
 
-String CloudSpeechClient::Transcribe(Audio* audio) {
+String CloudSpeechClient::Transcribe(m5avatar::Avatar& avatar) {
+  Serial.println("\r\nRecord start!\r\n");
+  Audio* audio = new Audio();
+  audio->Record();
+  Serial.println("Record end\r\n");
+  Serial.println("音声認識開始");
+  if(LANG_CODE == "ja-JP") {
+    avatar.setSpeechText("わかりました");
+  }else{
+    avatar.setSpeechText("I understand.");
+  }
+
+  WiFiClientSecure client;
+  client.setCACert(root_ca);
+  client.setTimeout( 10000 ); 
+  if (!client.connect(server_stt, 443)) Serial.println("Connection failed!");
+
   String HttpBody1 = "{\"config\":{\"encoding\":\"LINEAR16\",\"sampleRateHertz\":16000,\"languageCode\":\""+LANG_CODE+"\"},\"audio\":{\"content\":\"";
   String HttpBody3 = "\"}}\r\n\r\n";
   int httpBody2Length = (audio->wavDataSize + sizeof(audio->paddedHeader))*4/3;  // 4/3 is from base64 encoding
   String ContentLength = String(HttpBody1.length() + httpBody2Length + HttpBody3.length());
 //  Serial.printf("HttpBody1=%d httpBody2Length=%d HttpBody3=%d \n",HttpBody1.length(),httpBody2Length,HttpBody3.length());
   String HttpHeader;
-  if (authentication == USE_APIKEY) 
-    HttpHeader = String("POST /v1/speech:recognize?key=") + GOOGLE_API_KEY
+  HttpHeader = String("POST /v1/speech:recognize?key=") + GOOGLE_API_KEY
     + String(" HTTP/1.1\r\nHost: speech.googleapis.com\r\nContent-Type: application/json\r\nContent-Length: ") + ContentLength + String("\r\n\r\n");
-  else if (authentication == USE_ACCESSTOKEN)
-    HttpHeader = String("POST /v1/speech:recognize HTTP/1.1\r\nHost: speech.googleapis.com\r\nContent-Type: application/json\r\nAuthorization: Bearer ")
-    + AccessToken + String("\r\nContent-Length: ") + ContentLength + String("\r\n\r\n");
   client.print(HttpHeader); //Serial.print(HttpHeader);
   client.print(HttpBody1); //Serial.print(HttpBody1);
-  PrintHttpBody2(audio);
+  PrintHttpBody2(client, audio);
   client.print(HttpBody3); //Serial.print(HttpBody3);
   while (!client.available());
   // Skip HTTP headers
@@ -81,6 +92,9 @@ String CloudSpeechClient::Transcribe(Audio* audio) {
       Serial.println("NG");
     }
   }
+  client.stop();
+
+  delete audio;
   return result;
 }
 

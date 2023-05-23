@@ -1,22 +1,13 @@
 #ifndef _CLOUDSPEECHCLIENT_H
 #define _CLOUDSPEECHCLIENT_H
-#include <WiFiClientSecure.h>
-#include "Audio.h"
 
-enum Authentication {
-  USE_ACCESSTOKEN,
-  USE_APIKEY
-};
+#include <Avatar.h>
 
 class CloudSpeechClient {
-  WiFiClientSecure client;
-  void PrintHttpBody2(Audio* audio);
-  Authentication authentication;
-
 public:
-  CloudSpeechClient(Authentication authentication);
+  CloudSpeechClient();
   ~CloudSpeechClient();
-  String Transcribe(Audio* audio);
+  String Transcribe(m5avatar::Avatar& avatar);
 };
 
 #endif // _CLOUDSPEECHCLIENT_H
