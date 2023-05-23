@@ -1171,6 +1171,10 @@ int search_separator(String text, int tbl){
 //   return -1;
 // }
 
+ISpeechToTextClient* CreateSpeechToTextClient() {
+  return new CloudSpeechClient();
+}
+
 void loop()
 {
   static int lastms = 0;
@@ -1253,9 +1257,9 @@ void loop()
           avatar.setSpeechText("May I help you?");
         }
         M5.Speaker.end();
-        CloudSpeechClient* cloudSpeechClient = new CloudSpeechClient();
-        String ret = cloudSpeechClient->Transcribe(avatar);
-        delete cloudSpeechClient;
+        ISpeechToTextClient* sttClient = CreateSpeechToTextClient();
+        String ret = sttClient->Transcribe(avatar);
+        delete sttClient;
         delay(500);
 #ifdef USE_SERVO
         servo_home = prev_servo_home;

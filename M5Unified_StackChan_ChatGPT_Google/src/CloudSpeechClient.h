@@ -1,13 +1,12 @@
 #ifndef _CLOUDSPEECHCLIENT_H
 #define _CLOUDSPEECHCLIENT_H
 
-#include <Avatar.h>
+#include "SpeechToTextClient.h"
 
-class CloudSpeechClient {
+class CloudSpeechClient : public ISpeechToTextClient {
 public:
   CloudSpeechClient();
-  ~CloudSpeechClient();
-  String Transcribe(m5avatar::Avatar& avatar);
+  String Transcribe(m5avatar::Avatar& avatar) override;
 };
 
 #endif // _CLOUDSPEECHCLIENT_H

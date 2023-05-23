@@ -8,9 +8,6 @@
 CloudSpeechClient::CloudSpeechClient() {
 }
 
-CloudSpeechClient::~CloudSpeechClient() {
-}
-
 namespace {
 void PrintHttpBody2(WiFiClientSecure& client, Audio* audio) {
   String enc = base64::encode(audio->paddedHeader, sizeof(audio->paddedHeader));
