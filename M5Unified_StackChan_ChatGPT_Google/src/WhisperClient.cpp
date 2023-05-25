@@ -161,12 +161,20 @@ String WhisperClient::Transcribe(m5avatar::Avatar& avatar) {
   client.stop();
   delete record_buffer;
 
-  StaticJsonDocument<200> doc;
-  ::deserializeJson(doc, body);
+  StaticJsonDocument<500> doc;
+  if (::deserializeJson(doc, body)) {
+    Serial.println(">>> deserialize failed!");
+    return "";
+  }
+  auto text = doc["text"].as<const char*>();
   Serial.print("\n認識結果：");
-  Serial.println(doc["text"].as<String>());
-
-  return doc["text"].as<String>();
+  if (text) {
+    Serial.println(static_cast<const char*>(text));
+    return String(text);
+  } else {
+      Serial.println("NG");
+  }
+  return "";
 }
 
 // certificate for https://api.openai.com
